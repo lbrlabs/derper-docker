@@ -23,7 +23,7 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v4.4.0
         with:
-          images: ${{ steps.login-ghcr.outputs.registry }}/docker-derper
+          images: ghcr.io/lbrlabs/docker-derper
           tags: |
             type=raw,value=latest,enable=true
             type=raw,value={{sha}}
