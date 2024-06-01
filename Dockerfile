@@ -4,14 +4,11 @@ WORKDIR /app
 # https://tailscale.com/kb/1118/custom-derp-servers/
 RUN go install tailscale.com/cmd/derper@main
 
-FROM ubuntu
+FROM cgr.dev/chainguard/wolfi-base:latest
 WORKDIR /app
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends apt-utils && \
-    apt-get install -y ca-certificates && \
+RUN apk update && \
+    apk add ca-certificates && \
     mkdir /app/certs
 
 ENV DERP_DOMAIN your-hostname.com
@@ -22,6 +19,10 @@ ENV DERP_STUN true
 ENV DERP_STUN_PORT 3478
 ENV DERP_HTTP_PORT 80
 ENV DERP_VERIFY_CLIENTS false
+ENV MESH_WITH ""
+ENV MESH_PSK_FILE ""
+ENV TCP_KEEPALIVE_TIME "10m0s"
+ENV TCP_USER_TIMEOUT "15s"
 
 COPY --from=builder /go/bin/derper .
 
@@ -32,5 +33,9 @@ CMD /app/derper --hostname=$DERP_DOMAIN \
     --stun=$DERP_STUN  \
     --stun-port=$DERP_STUN_PORT \
     --http-port=$DERP_HTTP_PORT \
-    --verify-clients=$DERP_VERIFY_CLIENTS
+    --verify-clients=$DERP_VERIFY_CLIENTS \
+    --tcp-keepalive-time=$TCP_KEEPALIVE_TIME \
+    --tcp-user-timeout=$TCP_USER_TIMEOUT \
+    $(if [ -n "$DERP_MESH_WITH" ]; then echo "--mesh-with=$DERP_MESH_WITH"; fi) \
+    $(if [ -n "$DERP_MESH_PSK_FILE" ]; then echo "--mesh-psk-file=$DERP_MESH_PSK_FILE"; fi)
 
